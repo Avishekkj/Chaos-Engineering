@@ -1,1 +1,1 @@
-![Prometheus](Statics/diagrams/Prometheus.png)
+![Prometheus](../Statics/diagrams/Prometheus.png)
