@@ -1,0 +1,27 @@
+{
+  "target": {
+    "hosts": {
+      "ids": [
+        "minikube"
+      ]
+    },
+    "type": "Exact"
+  },
+  "command": {
+    "type": "disk",
+    "commandType": "Disk",
+    "args": [
+      "-l",
+      "60",
+      "-w",
+      "4",
+      "-b",
+      "4",
+      "-p",
+      "75",
+      "-d",
+      "/tmp/gremlin"
+    ]
+  },
+  "includeNewTargets": true
+}
