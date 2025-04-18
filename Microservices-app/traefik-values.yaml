@@ -1,0 +1,5 @@
+# traefik-values.yaml
+metrics:
+  prometheus:
+    enabled: true
+
