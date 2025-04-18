@@ -1,10 +1,10 @@
-# 🔪 Minikube on local server with Docker & Sock Shop Microservices
+#  Minikube on local server with Docker & Sock Shop Microservices
 
 This guide helps you set up a Kubernetes cluster using Minikube with Docker on an Ubuntu instance, and deploy the **Sock Shop** microservices application.
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 - EC2 Ubuntu 20.04+ or local server
 - Internet access from EC2
