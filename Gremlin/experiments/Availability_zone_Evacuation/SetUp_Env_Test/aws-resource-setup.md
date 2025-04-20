@@ -90,3 +90,6 @@ This guide walks through the setup required to deploy EC2 instances with the Gre
 
 Once the setup is complete, proceed to configure and run chaos scenarios using the Gremlin UI. This setup ensures a highly available architecture with load balancing across multiple Availability Zones.
 
+![Gremlin Scenario Screenshot](../screenshots/GremlinScenario.png)
+
+![Gremlin Test](../screenshots/GremlinTest.png)
