@@ -1,37 +1,55 @@
 pipeline {
-    agent none
+    agent any
     environment {
-        ATTACK_ID = ''
-        GREMLIN_API_KEY = credentials('gremlinkey')
-        GREMLIN_TEAM_ID = credentials('gremlinteamid')
+        GREMLIN_API_KEY = credentials('gremlinkey')     // use your Jenkins credential ID
+        GREMLIN_TEAM_ID = credentials('gremlinteamid')  // use your Jenkins credential ID
     }
     parameters {
-        string(name: 'TARGET_IDENTIFIER', defaultValue: '172.31.30.238', description: 'Host to target')
-        string(name: 'CPU_LENGTH', defaultValue: '30', description: 'Duration of CPU attack')
-        string(name: 'CPU_CORE', defaultValue: '1', description: 'Number of cores to impact')
-        string(name: 'CPU_CAPACITY', defaultValue: '70', description: 'The percentage of total CPU capacity to consume')
+        string(name: 'HOSTNAME', defaultValue: 'ip-172-31-30-238.ap-southeast-2.compute.internal', description: 'Target host local hostname')
+        string(name: 'RDS_ENDPOINT', defaultValue: 'maraigremlin.cvwyoskgmxtl.ap-southeast-2.rds.amazonaws.com', description: 'RDS endpoint to blackhole')
+        string(name: 'PORT', defaultValue: '3306', description: 'Port number to blackhole')
+        string(name: 'EXCLUDE_PORT_PATTERN', defaultValue: '^53', description: 'Port pattern to exclude')
+        string(name: 'DURATION', defaultValue: '30', description: 'Duration of the attack in seconds')
     }
     stages {
-        stage('Initialize test environment') {
-            steps{
-                echo "[Add commands to create a test environment.]"
-            }
-        }
-        stage('Install application to test environment') {
-            steps{
-                echo "[Add commands to deploy your application to your test environment.]"
-            }
-        }
-        stage('Run chaos experiment') {
-            agent any
+        stage('Run Gremlin Blackhole Attack') {
             steps {
                 script {
-                    ATTACK_ID = sh (
-                        script: "curl -s -H 'Content-Type: application/json;charset=utf-8' -H 'Authorization: Key ${GREMLIN_API_KEY}' https://api.gremlin.com/v1/attacks/new?teamId=${GREMLIN_TEAM_ID} --data '{ \"command\": { \"type\": \"cpu\", \"args\": [\"-c\", \"$CPU_CORE\", \"-l\", \"$CPU_LENGTH\", \"-p\", \"$CPU_CAPACITY\"] },\"target\": { \"type\": \"Exact\", \"hosts\" : { \"ids\": [\"$TARGET_IDENTIFIER\"] } } }' --compressed",
-                                 curl -i -X POST 'https://api.gremlin.com/v1/attacks/new?teamId=42bee553-3ecf-440b-bee5-533ecfc40bc8' -H 'Content-Type: application/json;charset=utf-8' -H 'Authorization: Bearer Yy05NWE4ZTYyOS1jODk0LTU3NWMtYmZkYS1hMDIwZTdlYTY5NTI6MmExOTEyMGFhZjlhNTdiNzg5NDEwODVjNzFkMzJmOTBjNTczMzlmNWM1ODhmZGM5NGVhMWY3MjRiYTE1N2YxMWUxNGZlOTc4NzMyZDcyNmM4ZmM5OTYwZGI1NThhN2EwYTkwMzEzMTA3NTk3YjQxZGMyNWEwMjRjNmExMGM0NTY6ZjgxODAyNGMtMjU5NC00MDZjLTk4MDItNGMyNTk0NTA2YzRk' -d '{"target":{"hosts":{"ids":["172.31.30.238"]},"type":"Exact"},"command":{"type":"cpu","commandType":"CPU","args":["-l","60","-p","30","-a"]},"includeNewTargets":true}'
+                    def body = """{
+                        "target": {
+                            "type": "Random",
+                            "hosts": {
+                                "multiSelectTags": {
+                                    "local-hostname": ["${params.HOSTNAME}"]
+                                }
+                            },
+                            "percent": 100
+                        },
+                        "command": {
+                            "type": "blackhole",
+                            "commandType": "Blackhole",
+                            "args": [
+                                "-l", "${params.DURATION}",
+                                "-p", "${params.EXCLUDE_PORT_PATTERN}",
+                                "-h", "${params.RDS_ENDPOINT}",
+                                "-n", "${params.PORT}"
+                            ],
+                            "providers": []
+                        },
+                        "includeNewTargets": true
+                    }"""
+
+                    def response = sh (
+                        script: """#!/bin/bash
+curl -s -X POST "https://api.gremlin.com/v1/attacks/new?teamId=${GREMLIN_TEAM_ID}" \\
+     -H "Content-Type: application/json;charset=utf-8" \\
+     -H "Authorization: Key ${GREMLIN_API_KEY}" \\
+     -d '${body}'
+""",
                         returnStdout: true
                     ).trim()
-                echo "View your experiment at https://app.gremlin.com/attacks/${ATTACK_ID}"
+
+                    echo "Blackhole attack response: ${response}"
                 }
             }
         }
