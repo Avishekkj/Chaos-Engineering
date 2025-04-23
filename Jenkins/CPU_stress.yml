@@ -1,0 +1,61 @@
+pipeline {
+    agent none
+    environment {
+        ATTACK_ID = ''
+        GREMLIN_API_KEY = credentials('gremlinkey')
+        GREMLIN_TEAM_ID = credentials('gremlinteamid')
+    }
+    parameters {
+        string(name: 'TARGET_IDENTIFIER', defaultValue: '172.31.30.238', description: 'Host to target')
+        string(name: 'CPU_LENGTH', defaultValue: '30', description: 'Duration of CPU attack')
+        string(name: 'CPU_CORE', defaultValue: '1', description: 'Number of cores to impact')
+        string(name: 'CPU_CAPACITY', defaultValue: '70', description: 'The percentage of total CPU capacity to consume')
+    }
+    stages {
+        stage('Initialize test environment') {
+            steps {
+                echo "[Add commands to create a test environment.]"
+            }
+        }
+        stage('Install application to test environment') {
+            steps {
+                echo "[Add commands to deploy your application to your test environment.]"
+            }
+        }
+        stage('Run chaos experiment') {
+            agent any
+            steps {
+                script {
+                    def core = params.CPU_CORE
+                    def length = params.CPU_LENGTH
+                    def capacity = params.CPU_CAPACITY
+                    def target = params.TARGET_IDENTIFIER
+
+                    ATTACK_ID = sh (
+                        script: """#!/bin/bash
+curl -s -H 'Content-Type: application/json;charset=utf-8' \
+     -H 'Authorization: Key ${GREMLIN_API_KEY}' \
+     'https://api.gremlin.com/v1/attacks/new?teamId=${GREMLIN_TEAM_ID}' \
+     --data '{
+         "command": {
+             "type": "cpu",
+             "args": ["-c", "${core}", "-l", "${length}", "-p", "${capacity}"]
+         },
+         "target": {
+             "type": "Exact",
+             "hosts": {
+                 "ids": ["${target}"]
+             }
+         }
+     }' --compressed
+""",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "View your experiment at https://app.gremlin.com/attacks/${ATTACK_ID}"
+                }
+            }
+        }
+    }
+}
+
